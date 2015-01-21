@@ -9,12 +9,12 @@ public class GpsOnActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        LocationManager.getInstance().onActivityResume();
+        //LocationManager.getInstance().onActivityResume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        LocationManager.getInstance().onActivityPause();
+        //LocationManager.getInstance().onActivityPause();
     }
 }

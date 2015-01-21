@@ -118,14 +118,14 @@ public class MapsActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-        LocationManager.getInstance().onActivityResume();
+        //LocationManager.getInstance().onActivityResume();
         updateCurrentLocaiton();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        LocationManager.getInstance().onActivityPause();
+        //LocationManager.getInstance().onActivityPause();
         LocationManager.getInstance().removeGpsListener(_gpsListener);
     }
 

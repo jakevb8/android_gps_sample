@@ -8,6 +8,7 @@ import android.os.Bundle;
  * Created by jvanburen on 1/8/2015.
  */
 public class MyApplication extends Application {
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -19,4 +20,6 @@ public class MyApplication extends Application {
         super.onTerminate();
         LocationManager.getInstance().onApplicationTerminate();
     }
+
+
 }
