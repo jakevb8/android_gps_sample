@@ -1,5 +1,6 @@
 package com.locationservices.jvanburen.locationservicessample;
 
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,15 +20,17 @@ import com.google.android.gms.location.LocationServices;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by jvanburen on 1/8/2015.
  */
 public class LocationManager implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    public static final long FORGROUND_UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    public static final long BACKGROUND_UPDATE_INTERVAL_IN_MILLISECONDS = 30000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
-            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+            FORGROUND_UPDATE_INTERVAL_IN_MILLISECONDS / 2;
     protected static final String TAG = "LocationManager";
     private static LocationManager _instance;
     private Context _context;
@@ -69,7 +72,6 @@ public class LocationManager implements
     public void onApplicationCreate(Context context) {
         _context = context;
         buildGoogleApiClient();
-        _googleApiClient.connect();
         Log.d(TAG, "onApplicationCreate");
     }
 
@@ -79,18 +81,18 @@ public class LocationManager implements
                 _googleApiClient.isConnected()) {
             _googleApiClient.disconnect();
         }
+        stopLocationUpdates();
         Log.d(TAG, "onApplicationTerminate");
     }
 
-    private void onActivityResume() {
-        if (_googleApiClient.isConnected() && !_requestingLocationUpdates) {
-            startLocationUpdates();
-        }
+    public void onActivityResume() {
+        createLocationRequest(FORGROUND_UPDATE_INTERVAL_IN_MILLISECONDS);
+       _googleApiClient.connect();
     }
 
-    private void onActivityPause() {
-        _gpsListeners.clear();
-        stopLocationUpdates();
+    public void onActivityPause() {
+        createLocationRequest(BACKGROUND_UPDATE_INTERVAL_IN_MILLISECONDS);
+        _googleApiClient.connect();
     }
 
     private synchronized void buildGoogleApiClient() {
@@ -100,19 +102,18 @@ public class LocationManager implements
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
-        createLocationRequest();
     }
 
-    private void createLocationRequest() {
+    private void createLocationRequest(long updateTime) {
         _locationRequest = new LocationRequest();
-        _locationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        _locationRequest.setInterval(updateTime);
         _locationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
         _locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     private void startLocationUpdates() {
-        _locationReceiverPendingIntent = PendingIntent.getBroadcast(_context, 0,
-                new Intent(_context.getResources().getString(R.string.location_received_broadcast)),
+        Intent intent = new Intent(_context.getResources().getString(R.string.location_received_broadcast));
+        _locationReceiverPendingIntent = PendingIntent.getBroadcast(_context, 0, intent,
                 PendingIntent.FLAG_CANCEL_CURRENT);
         LocationServices.FusedLocationApi.requestLocationUpdates(
                 _googleApiClient, _locationRequest, _locationReceiverPendingIntent);
@@ -127,6 +128,9 @@ public class LocationManager implements
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.i(TAG, "Connected to GoogleApiClient");
+        if(_locationReceiverPendingIntent != null) {
+            stopLocationUpdates();
+        }
         startLocationUpdates();
         _currentLocation = LocationServices.FusedLocationApi.getLastLocation(_googleApiClient);
         _lastUpdateTime = DateFormat.getTimeInstance().format(new Date());
@@ -134,6 +138,7 @@ public class LocationManager implements
         if (_googleApiClient.isConnected() && !_requestingLocationUpdates) {
             startLocationUpdates();
         }
+        _googleApiClient.disconnect();
     }
 
     @Override
