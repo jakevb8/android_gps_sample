@@ -33,12 +33,12 @@ public class LocationManager implements
     private Context _context;
     private GoogleApiClient _googleApiClient;
     private LocationRequest _locationRequest;
-    private Location _currentLocation;
+    private static Location _currentLocation;
     private Boolean _requestingLocationUpdates;
-    private String _lastUpdateTime;
+    private static String _lastUpdateTime;
     private PendingIntent _locationReceiverPendingIntent;
 
-    private ArrayList<GpsListener> _gpsListeners = new ArrayList<>();
+    private static ArrayList<GpsListener> _gpsListeners = new ArrayList<>();
 
     private LocationManager() {
     }
@@ -155,11 +155,15 @@ public class LocationManager implements
         public void onGpsChanged(Location newLocation);
     }
 
-    public class LocationReceiver extends BroadcastReceiver {
+    public static class LocationReceiver extends BroadcastReceiver {
+
+        public LocationReceiver() {
+        }
+
         @Override
         public void onReceive(Context context, Intent intent) {
             try {
-                Location location = (Location) intent.getSerializableExtra(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
+                Location location = (Location) intent.getExtras().get(FusedLocationProviderApi.KEY_LOCATION_CHANGED);
                 _currentLocation = location;
                 _lastUpdateTime = DateFormat.getTimeInstance().format(new Date());
                 for (GpsListener gpsListener : _gpsListeners) {
@@ -167,7 +171,7 @@ public class LocationManager implements
                 }
 
                 Log.d(TAG, location.toString());
-                Toast.makeText(_context, _context.getResources().getString(R.string.location_updated_message),
+                Toast.makeText(context, context.getResources().getString(R.string.location_updated_message),
                         Toast.LENGTH_SHORT).show();
             }
             catch (Exception e) {
